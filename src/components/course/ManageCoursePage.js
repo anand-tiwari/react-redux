@@ -3,6 +3,7 @@ import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 import * as courseActions from '../../actions/courseActions';
 import CourseForm from './CourseForm';
+import toastr from 'toastr';
 
 // Import actions here!!
 
@@ -11,7 +12,8 @@ class ManageCoursePage extends React.Component {
     super(props, context);
     this.state = {
       course: Object.assign({}, this.props.course),
-      errors: {}
+      errors: {},
+      saving: false
     };
 
     this.updateCourseState = this.updateCourseState.bind(this);
@@ -31,12 +33,23 @@ class ManageCoursePage extends React.Component {
     course[field] = event.target.value;
     return this.setState({course:course});
   }
+
   saveCourse(event){
     event.preventDefault();
-    this.props.actions.saveCourse(this.state.course);
-    this.context.router.push('/courses');
+    this.setState({saving:true});
+    this.props.actions.saveCourse(this.state.course)
+      .then(() => this.redirect())
+      .catch( error => {
+        toastr.error(error);
+        this.setState({saving:false});
+      });
   }
 
+  redirect(){
+    toastr.success('Course saved');
+    this.setState({saving:false});
+    this.context.router.push('/courses');
+  }
   render() {
     return (
       <CourseForm
@@ -45,6 +58,7 @@ class ManageCoursePage extends React.Component {
         onSave={this.saveCourse}
         course={this.state.course}
         errors={this.state.errors}
+        saving={this.state.saving}
       />
     );
   }
@@ -53,7 +67,8 @@ class ManageCoursePage extends React.Component {
 ManageCoursePage.propTypes = {
   course: PropTypes.object.isRequired,
   authors: PropTypes.array.isRequired,
-  actions: PropTypes.object.isRequired
+  actions: PropTypes.object.isRequired,
+  saving:PropTypes.bool
 };
 
 ManageCoursePage.contextTypes = {
